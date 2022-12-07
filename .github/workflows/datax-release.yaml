@@ -18,10 +18,12 @@ jobs:
           java-version: '8'
           cache: maven
           architecture: x64
-      - name: Build Hive
+      - name: Build Datax
         run: |
           curl -L "https://dlcdn.apache.org/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz" | tar zx
-          "apache-maven-${MVN_VERSION}/bin/mvn" clean package -Dspark.version=${SPARK_VERSION} -U clean package assembly:assembly -Dmaven.test.skip=true
+          "apache-maven-${MVN_VERSION}/bin/mvn" -U clean package assembly:assembly -Dmaven.test.skip=true
+      - name: File Dedup
+        run: |
           cd target
           tar -zxf datax.tar.gz
           rm datax.tar.gz
