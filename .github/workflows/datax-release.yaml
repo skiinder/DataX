@@ -22,6 +22,13 @@ jobs:
         run: |
           curl -L "https://dlcdn.apache.org/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.tar.gz" | tar zx
           "apache-maven-${MVN_VERSION}/bin/mvn" clean package -Dspark.version=${SPARK_VERSION} -U clean package assembly:assembly -Dmaven.test.skip=true
+          cd target
+          tar -zxf datax.tar.gz
+          rm datax.tar.gz
+          cd datax
+          curl -L https://raw.githubusercontent.com/skiinder/my_kubernetes_images/main/scripts/filededup.sh | bash -
+          cd ..
+          tar -zcf datax.tar.gz datax
       - name: Upload Package
         uses: actions/upload-artifact@v3
         with:
