@@ -290,6 +290,7 @@ public  class HdfsHelper {
                                    TaskPluginCollector taskPluginCollector){
         char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER);
         List<Configuration>  columns = config.getListConfiguration(Key.COLUMN);
+        String nullFormat = config.getString(Key.NULL_FORMAT, "\\N");
         String compress = config.getString(Key.COMPRESS,null);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmm");
@@ -310,7 +311,7 @@ public  class HdfsHelper {
             RecordWriter writer = outFormat.getRecordWriter(fileSystem, conf, outputPath.toString(), Reporter.NULL);
             Record record = null;
             while ((record = lineReceiver.getFromReader()) != null) {
-                MutablePair<Text, Boolean> transportResult = transportOneRecord(record, fieldDelimiter, columns, taskPluginCollector);
+                MutablePair<Text, Boolean> transportResult = transportOneRecord(record, fieldDelimiter, columns, taskPluginCollector, nullFormat);
                 if (!transportResult.getRight()) {
                     writer.write(NullWritable.get(),transportResult.getLeft());
                 }
@@ -326,8 +327,8 @@ public  class HdfsHelper {
     }
 
     public static MutablePair<Text, Boolean> transportOneRecord(
-            Record record, char fieldDelimiter, List<Configuration> columnsConfiguration, TaskPluginCollector taskPluginCollector) {
-        MutablePair<List<Object>, Boolean> transportResultList =  transportOneRecord(record,columnsConfiguration,taskPluginCollector);
+            Record record, char fieldDelimiter, List<Configuration> columnsConfiguration, TaskPluginCollector taskPluginCollector, String nullFormat) {
+        MutablePair<List<Object>, Boolean> transportResultList =  transportOneRecord(record,columnsConfiguration,taskPluginCollector, nullFormat);
         //保存<转换后的数据,是否是脏数据>
         MutablePair<Text, Boolean> transportResult = new MutablePair<Text, Boolean>();
         transportResult.setRight(false);
@@ -369,6 +370,7 @@ public  class HdfsHelper {
     public void orcFileStartWrite(RecordReceiver lineReceiver, Configuration config, String fileName,
                                   TaskPluginCollector taskPluginCollector){
         List<Configuration>  columns = config.getListConfiguration(Key.COLUMN);
+        String nullFormat = config.getString(Key.NULL_FORMAT, "\\N");
         String compress = config.getString(Key.COMPRESS, null);
         List<String> columnNames = getColumnNames(columns);
         List<ObjectInspector> columnTypeInspectors = getColumnTypeInspectors(columns);
@@ -388,7 +390,7 @@ public  class HdfsHelper {
             RecordWriter writer = outFormat.getRecordWriter(fileSystem, conf, fileName, Reporter.NULL);
             Record record = null;
             while ((record = lineReceiver.getFromReader()) != null) {
-                MutablePair<List<Object>, Boolean> transportResult =  transportOneRecord(record,columns,taskPluginCollector);
+                MutablePair<List<Object>, Boolean> transportResult =  transportOneRecord(record,columns,taskPluginCollector, nullFormat);
                 if (!transportResult.getRight()) {
                     writer.write(NullWritable.get(), orcSerde.serialize(transportResult.getLeft(), inspector));
                 }
@@ -486,7 +488,7 @@ public  class HdfsHelper {
 
     public static MutablePair<List<Object>, Boolean> transportOneRecord(
             Record record,List<Configuration> columnsConfiguration,
-            TaskPluginCollector taskPluginCollector){
+            TaskPluginCollector taskPluginCollector, String nullFormat){
 
         MutablePair<List<Object>, Boolean> transportResult = new MutablePair<List<Object>, Boolean>();
         transportResult.setRight(false);
@@ -556,7 +558,7 @@ public  class HdfsHelper {
                     }
                 }else {
                     // warn: it's all ok if nullFormat is null
-                    recordList.add(null);
+                    recordList.add(nullFormat);
                 }
             }
         }
